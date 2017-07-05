@@ -382,10 +382,10 @@
         // check if we're within a pixel of x,y and if so we set position and impetus
         // to the whole pixel values so that we don't have infinite "wiggle"
 
-        var thresholdX = Math.round(this.lastX) === Math.round(relativeX)
-        var thresholdY = Math.round(this.lastY) === Math.round(relativeY)
+        var thresholdX = Math.round(this.lastX) !== Math.round(relativeX)
+        var thresholdY = Math.round(this.lastY) !== Math.round(relativeY)
 
-        if (this.impetus && thresholdX && thresholdY) {
+        if (this.impetus && (thresholdX || thresholdY)) {
           this.position.x = this.lastX = Math.round(relativeX)
           this.position.y = this.lastY = Math.round(relativeY)
 
@@ -717,6 +717,21 @@
         if (!this.animating) {
           this.animating = true
           this.animateTo(this.scale.x, zoomToValue, this.position.x, positionX, this.position.y, positionY, duration, this._createImpetus)
+        }
+      } else if (this.startZoom) {
+        // Handle zooming out with margins visible
+        let boundX = -this.imgTexture.width * this.scale.x + this.canvas.width
+        let boundY = -this.imgTexture.height * this.scale.y + this.canvas.height
+        var clampedX = Math.max(boundX, Math.min(0, this.position.x))
+        var clampedY = Math.max(boundY, Math.min(0, this.position.y))
+
+        if (this.momentum && this.impetus) {
+          this._destroyImpetus()
+        }
+
+        if (!this.animating && (this.position.x !== clampedX || this.position.y !== clampedY)) {
+          this.animating = true;
+          this.animateTo(this.scale.x, this.scale.x, this.position.x, clampedX, this.position.y, clampedY, 300, this._createImpetus)
         }
       }
 
